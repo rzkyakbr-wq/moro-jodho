@@ -12,5 +12,8 @@ class Absensi extends Model
         'status',
         'catatan',
         'waktu',
+        'latitude',
+        'longitude',
+        'akurasi',
     ];
 }

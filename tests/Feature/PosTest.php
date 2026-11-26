@@ -10,109 +10,147 @@ class PosTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_home_page_renders_customer_and_kasir_only(): void
+    public function test_kasir_page_renders_search_filters_and_map_absensi(): void
     {
         $response = $this->get('/kasir');
 
         $response->assertStatus(200);
-        $response->assertSee('Toko Tembakau Moro Jodho');
-        $response->assertSee('Katalog &amp; Pesan', false);
-        $response->assertSee('Kasir');
-        $response->assertDontSee('Owner Panel');
-        $response->assertSee('Shift 1 (09:00 - 12:00)');
-        $response->assertSee('Shift 2 (12:00 - 21:00)');
-        $response->assertSee('Full Day / Lembur (09:00 - 21:00)');
+        $response->assertSee('Toko Moro Jodho');
+        $response->assertSee('Cari nama barang');
+        $response->assertSee('1 Ons (100 gram)');
+        $response->assertSee('1/2 Ons (50 gram)');
+        $response->assertSee('Periksa Lokasi');
     }
 
-    public function test_owner_page_is_separated_at_owner_route(): void
-    {
-        $response = $this->get('/owner');
-
-        $response->assertStatus(200);
-        $response->assertSee('Moro Jodho — Pemilik');
-        $response->assertSee('Masuk Halaman Pemilik');
-    }
-
-    public function test_api_all_returns_seeded_data(): void
+    public function test_owner_page_hides_password_and_supports_gmail_login_and_reset(): void
     {
         $this->seed();
 
-        $response = $this->getJson('/api/pos/all');
+        $page = $this->get('/owner');
+        $page->assertStatus(200)
+            ->assertSee('Email Gmail Pemilik')
+            ->assertSee('Lupa kata sandi?')
+            ->assertDontSee('MoroJodho#2026!');
 
-        $response->assertStatus(200)
-            ->assertJsonStructure(['produk', 'absensi', 'penjualan', 'pembelian']);
+        $this->postJson('/api/pos/login', [
+            'username' => 'morojodho.owner@gmail.com',
+            'password' => 'salah123',
+            'role' => 'owner',
+        ])->assertStatus(401);
 
-        $this->assertGreaterThan(0, count($response->json('produk')));
+        $this->postJson('/api/pos/login', [
+            'username' => 'morojodho.owner@gmail.com',
+            'password' => 'MoroJodho#2026!',
+            'role' => 'owner',
+        ])->assertStatus(200)
+            ->assertJsonPath('user.role', 'owner');
+
+        $forgot = $this->postJson('/api/pos/owner/forgot-password', [
+            'email' => 'morojodho.owner@gmail.com',
+        ])->assertStatus(200);
+
+        $code = $forgot->json('dev_hint');
+        $this->postJson('/api/pos/owner/reset-password', [
+            'email' => 'morojodho.owner@gmail.com',
+            'code' => $code,
+            'password' => 'SandiBaru#2026!',
+        ])->assertStatus(200);
+
+        $this->postJson('/api/pos/login', [
+            'username' => 'morojodho.owner@gmail.com',
+            'password' => 'SandiBaru#2026!',
+            'role' => 'owner',
+        ])->assertStatus(200);
     }
 
-    public function test_login_validates_pin_and_sets_session(): void
+    public function test_owner_can_set_kasir_code_and_kasir_logs_in_with_it(): void
     {
+        $this->seed();
+
         $this->postJson('/api/pos/login', [
-            'username' => 'Budi',
-            'password' => 'salah',
+            'username' => 'morojodho.owner@gmail.com',
+            'password' => 'MoroJodho#2026!',
+            'role' => 'owner',
+        ])->assertStatus(200);
+
+        $this->postJson('/api/pos/kasir-code', [
+            'kasir_code' => 'MJ-2026',
+        ])->assertStatus(200);
+
+        $this->postJson('/api/pos/logout')->assertStatus(200);
+
+        $this->postJson('/api/pos/login', [
+            'username' => 'Kasir Andi',
+            'password' => 'kasir123',
             'role' => 'kasir',
         ])->assertStatus(401);
 
         $this->postJson('/api/pos/login', [
-            'username' => 'Budi',
-            'password' => 'kasir123',
+            'username' => 'Kasir Andi',
+            'password' => 'MJ-2026',
             'role' => 'kasir',
-        ])->assertStatus(200)
-            ->assertJsonPath('user.role', 'kasir');
+        ])->assertStatus(200);
     }
 
-    public function test_owner_crud_export_and_kasir_checkout(): void
+    public function test_tobacco_auto_gram_ons_checkout_restock_gps_and_excel(): void
     {
+        $this->seed();
+
         $this->postJson('/api/pos/login', [
-            'username' => 'Rizky',
-            'password' => 'owner123',
+            'username' => 'morojodho.owner@gmail.com',
+            'password' => 'MoroJodho#2026!',
             'role' => 'owner',
         ])->assertStatus(200);
 
         $createRes = $this->postJson('/api/pos/produk', [
-            'nama' => 'Tembakau Uji Coba',
-            'kategori' => 'original',
-            'satuan' => 'gram',
-            'stok' => 100,
-            'harga_beli' => 400,
-            'harga_jual' => 600,
+            'nama' => 'Tembakau Uji Ons',
+            'kategori' => 'tembako olahan',
+            'satuan' => 'pics',
+            'stok' => 500,
+            'harga_beli' => 40000,
+            'harga_jual' => 70000,
         ]);
 
-        $createRes->assertStatus(201);
+        $createRes->assertStatus(201)
+            ->assertJsonPath('produk.satuan', 'gram')
+            ->assertJsonPath('produk.harga_setengah_ons', 35000);
+
         $produkId = $createRes->json('produk.id');
 
-        $this->postJson("/api/pos/produk/{$produkId}", [
-            'nama' => 'Tembakau Uji Coba Edit',
-            'kategori' => 'racik',
-            'satuan' => 'gram',
-            'stok' => 80,
-            'harga_beli' => 450,
-            'harga_jual' => 700,
-        ])->assertStatus(200)
-            ->assertJsonPath('produk.nama', 'Tembakau Uji Coba Edit');
+        $this->postJson("/api/pos/produk/{$produkId}/restock", [
+            'jumlah' => 200,
+            'harga_beli' => 42000,
+            'catatan' => 'Tambah stok',
+        ])->assertStatus(200);
+
+        $this->assertEquals(700, Produk::findOrFail($produkId)->stok);
 
         $trxRes = $this->postJson('/api/pos/penjualan', [
-            'items' => [['id' => $produkId, 'qty' => 10]],
-            'bayar' => 10000,
+            'items' => [
+                ['id' => $produkId, 'qty' => 1, 'takaran' => '1_ons'],
+                ['id' => $produkId, 'qty' => 1, 'takaran' => 'setengah_ons'],
+            ],
+            'bayar' => 120000,
         ]);
 
         $trxRes->assertStatus(201)
-            ->assertJsonPath('transaksi.total', 7000)
-            ->assertJsonPath('transaksi.kembali', 3000);
+            ->assertJsonPath('transaksi.total', 105000)
+            ->assertJsonPath('transaksi.kembali', 15000);
 
-        $this->assertEquals(70, Produk::findOrFail($produkId)->stok);
+        $this->assertEquals(550, Produk::findOrFail($produkId)->stok);
 
         $this->postJson('/api/pos/absensi', [
             'shift' => 'Full Day / Lembur (09:00 - 21:00)',
             'status' => 'Hadir',
-            'catatan' => 'Lembur toko',
-        ])->assertStatus(201);
+            'catatan' => 'Lembur',
+            'latitude' => -7.0051453,
+            'longitude' => 110.4381254,
+            'akurasi' => 12,
+        ])->assertStatus(201)
+            ->assertJsonPath('absensi.akurasi', 12);
 
-        $this->get('/owner/export/penjualan')->assertStatus(200)->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
-        $this->get('/owner/export/kulakan')->assertStatus(200)->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
-        $this->get('/owner/export/omset')->assertStatus(200)->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
-
-        $this->deleteJson("/api/pos/produk/{$produkId}")->assertStatus(200);
-        $this->assertNull(Produk::find($produkId));
+        $this->get('/owner/export?start_date=2026-01-01&end_date=2026-12-31')
+            ->assertStatus(200)
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
     }
 }

@@ -4,10 +4,9 @@ nixPkgs = ['php82', 'php82Extensions.pdo_sqlite', 'composer']
 [phases.build]
 cmds = [
     'composer install --ignore-platform-reqs --no-dev',
-    'php artisan config:cache',
-    'php artisan route:cache',
-    'php artisan view:cache'
+    'touch database/database.sqlite',
+    'php artisan migrate --force'
 ]
 
 [start]
-cmd = 'vendor/bin/heroku-php-apache2 public/'
+cmd = 'php artisan serve --host=0.0.0.0 --port=$PORT'

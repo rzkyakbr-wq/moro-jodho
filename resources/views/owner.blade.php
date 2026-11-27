@@ -100,10 +100,7 @@
       gap: 10px;
     }
 
-    .search-box {
-      position: relative;
-      margin-bottom: 14px;
-    }
+    .search-box { position: relative; margin-bottom: 14px; }
     .search-box i {
       position: absolute;
       left: 14px;
@@ -111,10 +108,7 @@
       transform: translateY(-50%);
       color: var(--text-muted);
     }
-    .search-box input {
-      padding-left: 40px;
-      margin-bottom: 0;
-    }
+    .search-box input { padding-left: 40px; margin-bottom: 0; }
 
     .filter-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
     .filter-btn {
@@ -249,6 +243,31 @@
       font-size: 0.8rem;
     }
 
+    .pagination-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      background: #222;
+      color: var(--text-light);
+      border: 1px solid var(--card-border);
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .page-btn.active, .page-btn:hover:not(:disabled) {
+      background: var(--primary-accent);
+      color: #000;
+      border-color: var(--primary-accent);
+    }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
     .pin-wrapper { position: relative; margin-bottom: 12px; }
     .pin-wrapper input { margin-bottom: 0; padding-right: 44px; }
     .pin-toggle-btn {
@@ -368,7 +387,7 @@
 
   <div class="container">
 
-    <!-- FORM MASUK OWNER (GMAIL + KATA SANDI, TANPA TAMPILAN SANDI) -->
+    <!-- FORM MASUK OWNER -->
     <div id="owner-login-card" class="card {{ ($currentUser['role'] ?? '') === 'owner' ? 'hidden' : '' }}" style="max-width: 420px; margin: 40px auto;">
       <h2><i class="fa-solid fa-lock"></i> Masuk Halaman Pemilik</h2>
       <form onsubmit="handleOwnerLogin(event)">
@@ -431,15 +450,16 @@
         </div>
       </div>
 
-      <!-- TAB MENU OWNER (DI ATAS) -->
+      <!-- TAB MENU OWNER (KULAKAN & ABSENSI TERPISAH, SEMUA MENU DI ATAS) -->
       <div class="filter-bar">
-        <button class="filter-btn active" onclick="switchOwnerTab('produk', this)"><i class="fa-solid fa-boxes-stacked"></i> Kelola Produk &amp; Kulakan</button>
+        <button class="filter-btn active" onclick="switchOwnerTab('produk', this)"><i class="fa-solid fa-boxes-stacked"></i> Kelola Produk</button>
+        <button class="filter-btn" onclick="switchOwnerTab('kulakan', this)"><i class="fa-solid fa-truck-ramp-box"></i> Riwayat Kulakan</button>
         <button class="filter-btn" onclick="switchOwnerTab('penjualan', this)"><i class="fa-solid fa-receipt"></i> Laporan Penjualan</button>
-        <button class="filter-btn" onclick="switchOwnerTab('riwayat', this)"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Kulakan &amp; Absensi</button>
+        <button class="filter-btn" onclick="switchOwnerTab('absensi', this)"><i class="fa-solid fa-clipboard-user"></i> Absensi &amp; Lokasi Kasir</button>
         <button class="filter-btn" onclick="switchOwnerTab('kodekasir', this)"><i class="fa-solid fa-key"></i> Kode Kasir &amp; Akun</button>
       </div>
 
-      <!-- TAB 1: PRODUK & KULAKAN -->
+      <!-- TAB 1: KELOLA PRODUK -->
       <div id="owner-tab-produk">
         <div class="card">
           <h2><i class="fa-solid fa-plus-circle"></i> Tambah Barang Baru &amp; Catat Kulakan</h2>
@@ -482,11 +502,11 @@
               </div>
               <div style="flex: 1; min-width: 170px;">
                 <label class="field-label" id="prod-jual-label">Harga Jual 1 Ons (100g)</label>
-                <input type="text" inputmode="numeric" id="prod-hargajual" placeholder="Contoh: 70.000" required oninput="formatRibuanInput(this); autoFillHalfOns('prod');">
+                <input type="text" inputmode="numeric" id="prod-hargajual" placeholder="Isi manual, mis: 70.000" required oninput="formatRibuanInput(this)">
               </div>
               <div style="flex: 1; min-width: 170px;" id="prod-half-ons-wrap">
                 <label class="field-label">Harga Jual 1/2 Ons (50g)</label>
-                <input type="text" inputmode="numeric" id="prod-hargasetengah" placeholder="Otomatis setengah harga" oninput="formatRibuanInput(this); this.dataset.touched='1';">
+                <input type="text" inputmode="numeric" id="prod-hargasetengah" placeholder="Isi manual, mis: 35.000" oninput="formatRibuanInput(this)">
               </div>
             </div>
 
@@ -506,7 +526,7 @@
 
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="owner-prod-search" placeholder="Cari nama barang atau jenis barang..." oninput="renderOwnerProdukTable()">
+            <input type="text" id="owner-prod-search" placeholder="Cari nama barang atau jenis barang..." oninput="ownerProdPage=1; renderOwnerProdukTable();">
           </div>
 
           <div style="overflow-x: auto;">
@@ -525,10 +545,31 @@
               <tbody id="table-owner-produk"></tbody>
             </table>
           </div>
+          <div class="pagination-bar" id="owner-prod-pagination"></div>
         </div>
       </div>
 
-      <!-- TAB 2: LAPORAN PENJUALAN -->
+      <!-- TAB 2: RIWAYAT KULAKAN -->
+      <div id="owner-tab-kulakan" class="card hidden">
+        <h2><i class="fa-solid fa-truck-ramp-box"></i> Riwayat Kulakan Barang</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama Barang</th>
+                <th>Jumlah Masuk</th>
+                <th>Harga Modal</th>
+                <th>Total Pengeluaran</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody id="table-owner-kulakan"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: LAPORAN PENJUALAN -->
       <div id="owner-tab-penjualan" class="card hidden">
         <h2><i class="fa-solid fa-receipt"></i> Laporan Penjualan Toko</h2>
         <div style="overflow-x: auto;">
@@ -538,6 +579,7 @@
                 <th>Nomor Nota</th>
                 <th>Waktu</th>
                 <th>Kasir</th>
+                <th>Metode</th>
                 <th>Barang Dibeli</th>
                 <th>Total Tagihan</th>
                 <th>Uang Bayar</th>
@@ -549,48 +591,27 @@
         </div>
       </div>
 
-      <!-- TAB 3: RIWAYAT KULAKAN & ABSENSI -->
-      <div id="owner-tab-riwayat" class="hidden">
-        <div class="card">
-          <h2><i class="fa-solid fa-truck-ramp-box"></i> Riwayat Kulakan Barang</h2>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tanggal</th>
-                  <th>Nama Barang</th>
-                  <th>Jumlah Masuk</th>
-                  <th>Harga Modal</th>
-                  <th>Total Pengeluaran</th>
-                  <th>Catatan</th>
-                </tr>
-              </thead>
-              <tbody id="table-owner-kulakan"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2><i class="fa-solid fa-clipboard-user"></i> Riwayat Absensi &amp; Lokasi Kasir</h2>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Waktu</th>
-                  <th>Nama Kasir</th>
-                  <th>Jam Kerja / Shift</th>
-                  <th>Status</th>
-                  <th>Lokasi &amp; Peta</th>
-                  <th>Catatan</th>
-                </tr>
-              </thead>
-              <tbody id="table-owner-absensi"></tbody>
-            </table>
-          </div>
+      <!-- TAB 4: ABSENSI & LOKASI KASIR -->
+      <div id="owner-tab-absensi" class="card hidden">
+        <h2><i class="fa-solid fa-clipboard-user"></i> Riwayat Absensi &amp; Lokasi Kasir</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Nama Kasir</th>
+                <th>Jam Kerja / Shift</th>
+                <th>Status</th>
+                <th>Lokasi &amp; Peta</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody id="table-owner-absensi"></tbody>
+          </table>
         </div>
       </div>
 
-      <!-- TAB 4: PENGATURAN KODE KASIR & AKUN PEMILIK -->
+      <!-- TAB 5: PENGATURAN KODE KASIR & AKUN PEMILIK -->
       <div id="owner-tab-kodekasir" class="hidden">
         <div class="card">
           <h2><i class="fa-solid fa-key"></i> Pengaturan Kode Masuk Kasir</h2>
@@ -612,7 +633,7 @@
         <div class="card">
           <h2><i class="fa-solid fa-user-shield"></i> Pengaturan Akun Gmail &amp; Kata Sandi Pemilik</h2>
           <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
-            Gunakan Gmail pribadi Anda dan kata sandi yang kuat agar akun pemilik tetap aman dan mudah dipulihkan jika lupa sandi.
+            Email Gmail ini juga digunakan untuk menerima pemberitahuan otomatis apabila ada stok barang yang habis.
           </p>
           <form onsubmit="simpanAkunOwner(event)" style="max-width: 420px;">
             <label class="field-label">Email Gmail Pemilik</label>
@@ -758,7 +779,7 @@
             <input type="text" inputmode="numeric" id="edit-hargabeli" required oninput="formatRibuanInput(this)">
           </div>
           <div style="flex: 1; min-width: 140px;">
-            <label class="field-label" id="edit-jual-label">Harga Jual</label>
+            <label class="field-label" id="edit-jual-label">Harga Jual 1 Ons</label>
             <input type="text" inputmode="numeric" id="edit-hargajual" required oninput="formatRibuanInput(this)">
           </div>
           <div style="flex: 1; min-width: 140px;" id="edit-half-ons-wrap">
@@ -795,6 +816,8 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const DEFAULT_IMG = @json(asset('assets/logo-icon.jpg'));
     const TOBACCO_CATS = ['tembako olahan', 'original', 'racik'];
+    const OWNER_ITEMS_PER_PAGE = 9;
+    let ownerProdPage = 1;
     let db = { produk: [], absensi: [], penjualan: [], pembelian: [], kasir_code: '', owner_email: '' };
     let currentUser = @json($currentUser);
     let financialChartInstance = null;
@@ -876,14 +899,6 @@
       }
     }
 
-    function autoFillHalfOns(prefix) {
-      const jual = parseAngka(document.getElementById(`${prefix}-hargajual`).value);
-      const halfInput = document.getElementById(`${prefix}-hargasetengah`);
-      if (jual > 0 && !halfInput.dataset.touched) {
-        halfInput.value = formatAngka(Math.round(jual / 2));
-      }
-    }
-
     async function apiJson(url, options = {}) {
       const headers = {
         'Accept': 'application/json',
@@ -901,7 +916,7 @@
     async function handleOwnerLogin(e) {
       e.preventDefault();
       try {
-        const res = await apiJson('/api/pos/login', {
+        const res = await apiJson('/pos-api/login', {
           method: 'POST',
           body: JSON.stringify({
             username: document.getElementById('owner-username').value,
@@ -922,7 +937,7 @@
 
     async function logoutOwner() {
       try {
-        await apiJson('/api/pos/logout', { method: 'POST', body: JSON.stringify({}) });
+        await apiJson('/pos-api/logout', { method: 'POST', body: JSON.stringify({}) });
       } catch (e) {}
       currentUser = null;
       document.getElementById('owner-dashboard').classList.add('hidden');
@@ -943,7 +958,7 @@
     async function kirimKodeReset(e) {
       e.preventDefault();
       try {
-        const res = await apiJson('/api/pos/owner/forgot-password', {
+        const res = await apiJson('/pos-api/owner/forgot-password', {
           method: 'POST',
           body: JSON.stringify({ email: document.getElementById('forgot-email').value }),
         });
@@ -958,7 +973,7 @@
     async function simpanPasswordBaru(e) {
       e.preventDefault();
       try {
-        const res = await apiJson('/api/pos/owner/reset-password', {
+        const res = await apiJson('/pos-api/owner/reset-password', {
           method: 'POST',
           body: JSON.stringify({
             email: document.getElementById('forgot-email').value,
@@ -977,8 +992,9 @@
       document.querySelectorAll('#owner-dashboard .filter-btn').forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
       document.getElementById('owner-tab-produk').classList.toggle('hidden', tab !== 'produk');
+      document.getElementById('owner-tab-kulakan').classList.toggle('hidden', tab !== 'kulakan');
       document.getElementById('owner-tab-penjualan').classList.toggle('hidden', tab !== 'penjualan');
-      document.getElementById('owner-tab-riwayat').classList.toggle('hidden', tab !== 'riwayat');
+      document.getElementById('owner-tab-absensi').classList.toggle('hidden', tab !== 'absensi');
       document.getElementById('owner-tab-kodekasir').classList.toggle('hidden', tab !== 'kodekasir');
     }
 
@@ -1025,7 +1041,7 @@
 
     async function loadOwnerData() {
       try {
-        db = await apiJson('/api/pos/all');
+        db = await apiJson('/pos-api/all');
         if (db.kasir_code) {
           document.getElementById('setting-kasir-code').value = db.kasir_code;
         }
@@ -1038,13 +1054,23 @@
       }
     }
 
+    function goToOwnerProdPage(p) {
+      ownerProdPage = p;
+      renderOwnerProdukTable();
+    }
+
     function renderOwnerProdukTable() {
       const q = (document.getElementById('owner-prod-search').value || '').trim().toLowerCase();
       const list = q
         ? db.produk.filter(p => p.nama.toLowerCase().includes(q) || p.kategori.toLowerCase().includes(q))
         : db.produk;
 
-      document.getElementById('table-owner-produk').innerHTML = list.map(p => {
+      const totalPages = Math.max(1, Math.ceil(list.length / OWNER_ITEMS_PER_PAGE));
+      ownerProdPage = Math.min(Math.max(1, ownerProdPage), totalPages);
+      const startIdx = (ownerProdPage - 1) * OWNER_ITEMS_PER_PAGE;
+      const pageItems = list.slice(startIdx, startIdx + OWNER_ITEMS_PER_PAGE);
+
+      document.getElementById('table-owner-produk').innerHTML = pageItems.map(p => {
         const tobacco = isTobacco(p.kategori);
         const unitNote = tobacco ? ' / ons' : ` / ${p.satuan}`;
         const halfText = tobacco ? `<br><small style="color:var(--text-muted)">1/2 ons: ${formatRupiah(p.harga_setengah_ons ?? Math.round(p.harga_jual / 2))}</small>` : '';
@@ -1064,6 +1090,18 @@
           </tr>
         `;
       }).join('') || '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Barang yang dicari tidak ditemukan.</td></tr>';
+
+      const pagEl = document.getElementById('owner-prod-pagination');
+      if (totalPages <= 1) {
+        pagEl.innerHTML = '';
+      } else {
+        let btns = `<button class="page-btn" ${ownerProdPage <= 1 ? 'disabled' : ''} onclick="goToOwnerProdPage(${ownerProdPage - 1})">&laquo; Sebelumnya</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+          btns += `<button class="page-btn ${i === ownerProdPage ? 'active' : ''}" onclick="goToOwnerProdPage(${i})">${i}</button>`;
+        }
+        btns += `<button class="page-btn" ${ownerProdPage >= totalPages ? 'disabled' : ''} onclick="goToOwnerProdPage(${ownerProdPage + 1})">Berikutnya &raquo;</button>`;
+        pagEl.innerHTML = btns;
+      }
     }
 
     function renderOwnerDashboard() {
@@ -1086,13 +1124,14 @@
             <td><b>${t.kode_transaksi}</b></td>
             <td>${t.waktu}</td>
             <td>${t.kasir}</td>
+            <td><b>${t.metode_pembayaran || 'Cash'}</b></td>
             <td>${itemsText}</td>
             <td><b>${formatRupiah(t.total)}</b></td>
             <td>${formatRupiah(t.bayar)}</td>
             <td>${formatRupiah(t.kembali)}</td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Belum ada data penjualan pada rentang tanggal ini.</td></tr>';
+      }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Belum ada data penjualan pada rentang tanggal ini.</td></tr>';
 
       document.getElementById('table-owner-kulakan').innerHTML = filtered.pembelian.map(b => {
         const unitNote = b.produk && isTobacco(b.produk.kategori) ? ' / ons' : '';
@@ -1208,10 +1247,9 @@
       }
 
       try {
-        await apiJson('/api/pos/produk', { method: 'POST', body: formData });
+        await apiJson('/pos-api/produk', { method: 'POST', body: formData });
         alert('Barang baru berhasil disimpan!');
         e.target.reset();
-        delete document.getElementById('prod-hargasetengah').dataset.touched;
         document.getElementById('add-preview').src = DEFAULT_IMG;
         syncUnitByCategory('prod');
         await loadOwnerData();
@@ -1242,7 +1280,7 @@
       e.preventDefault();
       const id = document.getElementById('restock-id').value;
       try {
-        await apiJson(`/api/pos/produk/${id}/restock`, {
+        await apiJson(`/pos-api/produk/${id}/restock`, {
           method: 'POST',
           body: JSON.stringify({
             jumlah: Number(document.getElementById('restock-jumlah').value),
@@ -1299,7 +1337,7 @@
       }
 
       try {
-        await apiJson(`/api/pos/produk/${id}`, { method: 'POST', body: formData });
+        await apiJson(`/pos-api/produk/${id}`, { method: 'POST', body: formData });
         closeEditModal();
         alert('Data produk berhasil diperbarui!');
         await loadOwnerData();
@@ -1311,7 +1349,7 @@
     async function hapusProduk(id, nama) {
       if (!confirm(`Yakin ingin menghapus "${nama}"?`)) return;
       try {
-        await apiJson(`/api/pos/produk/${id}`, { method: 'DELETE' });
+        await apiJson(`/pos-api/produk/${id}`, { method: 'DELETE' });
         alert('Produk berhasil dihapus!');
         await loadOwnerData();
       } catch (err) {
@@ -1323,7 +1361,7 @@
       e.preventDefault();
       const code = document.getElementById('setting-kasir-code').value;
       try {
-        await apiJson('/api/pos/kasir-code', {
+        await apiJson('/pos-api/kasir-code', {
           method: 'POST',
           body: JSON.stringify({ kasir_code: code }),
         });
@@ -1336,7 +1374,7 @@
     async function simpanAkunOwner(e) {
       e.preventDefault();
       try {
-        const res = await apiJson('/api/pos/owner/account', {
+        const res = await apiJson('/pos-api/owner/account', {
           method: 'POST',
           body: JSON.stringify({
             email: document.getElementById('setting-owner-email').value,
@@ -1362,10 +1400,11 @@
             <td>${t.kode_transaksi}</td>
             <td>${t.waktu}</td>
             <td>${t.kasir}</td>
+            <td>${t.metode_pembayaran || 'Cash'}</td>
             <td><b>${formatRupiah(t.total)}</b></td>
           </tr>
-        `).join('') || '<tr><td colspan="4" style="text-align:center;">Belum ada transaksi penjualan.</td></tr>';
-        bodyEl.innerHTML = `<table><thead><tr><th>Nomor Nota</th><th>Waktu</th><th>Kasir</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+        `).join('') || '<tr><td colspan="5" style="text-align:center;">Belum ada transaksi penjualan.</td></tr>';
+        bodyEl.innerHTML = `<table><thead><tr><th>Nomor Nota</th><th>Waktu</th><th>Kasir</th><th>Metode</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
       } else if (type === 'kulakan') {
         titleEl.innerText = 'Rincian Total Pengeluaran Kulakan';
         const rows = filtered.pembelian.map(b => `

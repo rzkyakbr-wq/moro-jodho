@@ -56,3 +56,18 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Deployment to Vercel
+
+The public pages and logo are served from `public/`. If every page and asset redirects to a Vercel login screen, disable Deployment Protection for the production deployment or use a public production domain.
+
+Configure these values in the Vercel project before enabling owner login:
+
+- `APP_KEY`: a generated Laravel application key; keep it private and stable between deployments.
+- `APP_URL`: the public HTTPS domain.
+- `DB_CONNECTION=pgsql` and the managed PostgreSQL connection settings. Do not rely on the local SQLite file for persistent production data.
+- `SESSION_DRIVER=cookie`, `SESSION_SECURE_COOKIE=true`, and `CACHE_STORE=array`.
+- `POS_OWNER_EMAIL` and `POS_OWNER_PASSWORD` for the owner account created by the seeder.
+- `MAIL_MAILER=smtp` and Gmail SMTP credentials using a Google App Password if stock alerts should arrive by email.
+
+Run `php artisan migrate --force` and `php artisan db:seed --force` against the production database once. Store credentials in Vercel Environment Variables, not in this repository. Geolocation and QR attendance require the site to be served over HTTPS.

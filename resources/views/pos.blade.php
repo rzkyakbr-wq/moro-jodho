@@ -95,6 +95,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .profile-hero-banner {
@@ -140,10 +142,7 @@
     }
     .meta-tag:hover { background: var(--primary-accent); color: #000; }
 
-    .search-box {
-      position: relative;
-      margin-bottom: 16px;
-    }
+    .search-box { position: relative; margin-bottom: 16px; }
     .search-box i {
       position: absolute;
       left: 14px;
@@ -151,10 +150,7 @@
       transform: translateY(-50%);
       color: var(--text-muted);
     }
-    .search-box input {
-      padding-left: 40px;
-      margin-bottom: 0;
-    }
+    .search-box input { padding-left: 40px; margin-bottom: 0; }
 
     .filter-label {
       font-size: 0.78rem;
@@ -191,9 +187,16 @@
 
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
     }
+    @media (max-width: 960px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+
     .product-card {
       background: #202020;
       border: 1px solid var(--card-border);
@@ -205,19 +208,19 @@
       transition: transform 0.25s, box-shadow 0.25s;
     }
     .product-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
       border-color: var(--primary-accent);
     }
     .product-img-wrapper {
       width: 100%;
-      height: 160px;
+      height: 155px;
       background: #151515;
       overflow: hidden;
       position: relative;
     }
     .product-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-    .product-card:hover .product-img { transform: scale(1.08); }
+    .product-card:hover .product-img { transform: scale(1.06); }
     .unit-badge {
       position: absolute;
       top: 10px;
@@ -237,37 +240,126 @@
       flex: 1;
       justify-content: space-between;
     }
-    .product-title { font-size: 0.95rem; font-weight: 700; color: var(--text-light); margin-bottom: 6px; }
+    .product-title { font-size: 0.95rem; font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
     .product-category { font-size: 0.75rem; color: var(--primary-accent); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
-    .product-price { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .product-price { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
     .product-subprice { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 2px; }
+    .product-stock { font-size: 0.8rem; margin-bottom: 10px; font-weight: 600; }
+    .stock-ok { color: var(--success); }
+    .stock-empty { color: var(--danger); }
 
-    .btn-row { display: flex; gap: 8px; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .btn-add-cart {
       background: var(--primary-accent);
       color: #000;
       border: none;
-      padding: 10px;
+      padding: 9px 10px;
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
-      width: 100%;
+      flex: 1;
       transition: background 0.2s;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
     }
     .btn-add-cart:hover { background: var(--gold-hover); }
+    .btn-add-cart:disabled { background: #3a3a3a; color: #777; cursor: not-allowed; }
     .btn-add-half {
       background: #2b2b2b;
       color: var(--primary-accent);
       border: 1px solid var(--primary-accent);
-      padding: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 1;
+      font-size: 0.82rem;
+    }
+    .btn-add-half:hover { background: var(--primary-accent); color: #000; }
+    .btn-add-half:disabled { border-color: #444; color: #666; cursor: not-allowed; }
+    .btn-add-custom {
+      background: #1f2d24;
+      color: var(--success);
+      border: 1px solid var(--success);
+      padding: 8px 10px;
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
       width: 100%;
-      font-size: 0.85rem;
+      margin-top: 6px;
+      font-size: 0.82rem;
     }
-    .btn-add-half:hover { background: var(--primary-accent); color: #000; }
+    .btn-add-custom:hover { background: var(--success); color: #000; }
+    .btn-add-custom:disabled { border-color: #444; color: #666; background: #222; cursor: not-allowed; }
+
+    /* PAGINATION */
+    .pagination-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      background: #222;
+      color: var(--text-light);
+      border: 1px solid var(--card-border);
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .page-btn.active, .page-btn:hover:not(:disabled) {
+      background: var(--primary-accent);
+      color: #000;
+      border-color: var(--primary-accent);
+    }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* PAYMENT METHOD TOGGLE */
+    .pay-method-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .pay-method-btn {
+      flex: 1;
+      background: #252525;
+      color: var(--text-light);
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .pay-method-btn.active {
+      background: var(--primary-accent);
+      color: #000;
+      border-color: var(--primary-accent);
+    }
+
+    /* ENCYCLOPEDIA GRID */
+    .nusantara-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .nusantara-item {
+      background: #202020;
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--primary-accent);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .nusantara-item h4 { color: var(--primary-accent); font-size: 1rem; margin-bottom: 4px; }
+    .nusantara-item small { display: block; color: var(--text-muted); font-size: 0.78rem; margin-bottom: 8px; }
+    .nusantara-item p { font-size: 0.86rem; color: var(--text-light); }
 
     .btn-wa-order {
       background: #25D366;
@@ -324,6 +416,44 @@
       margin-bottom: 12px;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-header h3 { color: var(--primary-accent); font-size: 1.1rem; }
+    .modal-close {
+      background: #2a2a2a;
+      color: #fff;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
     .hidden { display: none !important; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     table th, table td { border: 1px solid var(--card-border); padding: 12px; text-align: left; font-size: 0.88rem; }
@@ -361,7 +491,7 @@
         padding: 0 !important;
         height: auto !important;
       }
-      header, .container { display: none !important; }
+      header, .container, .modal-backdrop { display: none !important; }
       #receipt-print {
         display: block !important;
         position: static !important;
@@ -408,10 +538,10 @@
             <i class="fa-solid fa-eye"></i>
           </button>
         </div>
-        <button type="submit" class="btn-add-cart" style="margin-top: 10px;">Masuk Sekarang</button>
+        <button type="submit" class="btn-add-cart" style="margin-top: 10px; width: 100%;">Masuk Sekarang</button>
       </form>
       <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 15px; text-align: center;">
-        Kode masuk kasir hanya dapat diberikan oleh Pemilik Toko.
+        Saat berhasil masuk, kehadiran Anda otomatis tercatat.
       </p>
     </div>
 
@@ -430,6 +560,9 @@
           </a>
           <span class="meta-tag">
             <i class="fa-solid fa-clock"></i> Buka Setiap Hari: 09:00 - 21:00 WIB
+          </span>
+          <span class="meta-tag">
+            <i class="fa-solid fa-qrcode"></i> Menerima Cash &amp; QRIS
           </span>
         </div>
       </div>
@@ -465,6 +598,7 @@
             </div>
 
             <div class="product-grid" id="customer-catalog-grid"></div>
+            <div class="pagination-bar" id="customer-pagination"></div>
           </div>
         </div>
 
@@ -479,10 +613,66 @@
             <button class="btn-wa-order" onclick="kirimPesananWA()">
               <i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp
             </button>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; text-align: center;">
+              Pembayaran di toko mendukung <b>Tunai (Cash)</b> dan <b>QRIS</b>.
+            </p>
           </div>
         </div>
 
       </div>
+
+      <!-- ENSIKLOPEDIA TEMBAKAU NUSANTARA (SABANG - MERAUKE) -->
+      <div class="card">
+        <h2><i class="fa-solid fa-leaf"></i> Mengenal Jenis Tembakau Nusantara (Sabang sampai Merauke)</h2>
+        <div class="nusantara-grid">
+          <div class="nusantara-item">
+            <h4>1. Tembakau Gayo (Aceh - Sabang)</h4>
+            <small>Asal: Dataran Tinggi Gayo, Aceh</small>
+            <p>Memiliki aroma tajam dengan karakter rempah pegunungan, rasa kuat (bold), dan mantap di tenggorokan.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>2. Tembakau Deli (Sumatra Utara)</h4>
+            <small>Asal: Deli Serdang, Sumatra Utara</small>
+            <p>Daun tipis, elastis, dan berwarna cokelat cerah. Terkenal di seluruh dunia sebagai daun pembalut cerutu premium.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>3. Tembakau Mole (Jawa Barat)</h4>
+            <small>Asal: Sumedang &amp; Garut, Jawa Barat</small>
+            <p>Tekstur lembut dengan olahan rasa manis legit, aroma madu atau karamel yang harum, dan hisapan ringan.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>4. Tembakau Vorstenlanden (Jawa Tengah)</h4>
+            <small>Asal: Klaten &amp; Boyolali, Jawa Tengah</small>
+            <p>Aroma sedap, gurih, dan halus. Sangat cocok untuk racikan kretek maupun lintingan harian yang tidak menyengat.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>5. Tembakau Temanggung &amp; Srinthil</h4>
+            <small>Asal: Lereng Gunung Sumbing &amp; Sindoro</small>
+            <p>Legendaris dengan kandungan nikotin tinggi, aroma pekat khas, dan rasa gurih yang menjadi kunci racikan kretek.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>6. Tembakau Madura &amp; Besuki (Jawa Timur)</h4>
+            <small>Asal: Pamekasan, Sumenep &amp; Jember</small>
+            <p>Harum menyengat, daya bakar baik, serta rasa gurih manis yang hangat di setiap tarikan.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>7. Tembakau Virginia Lombok (NTB)</h4>
+            <small>Asal: Lombok Timur &amp; Tengah, NTB</small>
+            <p>Berwarna kuning keemasan hasil pengeringan oven, rasa ringan cenderung manis alami dan pembakaran rata.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>8. Tembakau Bone / Soppeng (Sulawesi)</h4>
+            <small>Asal: Sulawesi Selatan</small>
+            <p>Aroma kayu manis alami, rasa hangat dan pulen, sering dinikmati langsung maupun dicampur cengkeh.</p>
+          </div>
+          <div class="nusantara-item">
+            <h4>9. Tembakau Lembah Baliem (Papua - Merauke)</h4>
+            <small>Asal: Pegunungan Tengah Papua</small>
+            <p>Tembakau tradisional pegunungan yang diolah alami tanpa bahan tambahan, berkarakter earthy dan murni.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- TAMPILAN KASIR -->
@@ -491,7 +681,7 @@
       <div class="filter-bar" id="kasir-nav-tabs" style="margin-bottom: 20px;">
         <button class="filter-btn active" onclick="switchKasirTab('transaksi', this)"><i class="fa-solid fa-cash-register"></i> Transaksi Kasir</button>
         <button class="filter-btn" onclick="switchKasirTab('laporan', this)"><i class="fa-solid fa-receipt"></i> Laporan Penjualan</button>
-        <button class="filter-btn" onclick="switchKasirTab('absensi', this)"><i class="fa-solid fa-clipboard-user"></i> Absensi Jam Kerja</button>
+        <button class="filter-btn" onclick="switchKasirTab('absensi', this)"><i class="fa-solid fa-clipboard-user"></i> Absensi &amp; Lokasi</button>
       </div>
 
       <!-- TAB 1: TRANSAKSI KASIR -->
@@ -515,16 +705,18 @@
           <button class="filter-btn" onclick="filterKategori('kasir', 'alat', this)">Alat</button>
         </div>
 
-        <span class="filter-label">2. Pilih Takaran Ons (Khusus Tembakau)</span>
+        <span class="filter-label">2. Pilih Takaran / Beli Bebas (Khusus Tembakau)</span>
         <div class="filter-bar" id="kasir-ons-bar">
-          <button class="filter-btn active" onclick="filterOns('kasir', 'all', this)">Semua Takaran</button>
+          <button class="filter-btn active" onclick="filterOns('kasir', 'all', this)">Semua Pilihan</button>
           <button class="filter-btn" onclick="filterOns('kasir', '1_ons', this)">1 Ons (100 gram)</button>
           <button class="filter-btn" onclick="filterOns('kasir', 'setengah_ons', this)">1/2 Ons (50 gram)</button>
+          <button class="filter-btn" onclick="filterOns('kasir', 'custom', this)">Beli Bebas (Nominal Uang)</button>
         </div>
 
         <div style="display: flex; gap: 24px; flex-wrap: wrap;">
           <div style="flex: 2; min-width: 320px;">
             <div class="product-grid" id="kasir-catalog-grid"></div>
+            <div class="pagination-bar" id="kasir-pagination"></div>
           </div>
           <div style="flex: 1; min-width: 300px; background: #202020; padding: 20px; border-radius: 12px; border: 1px solid var(--card-border);">
             <h3>Detail Nota Belanja</h3>
@@ -533,12 +725,30 @@
             <p style="font-weight: bold; font-size: 1.15rem; display: flex; justify-content: space-between; margin-bottom: 12px;">
               Total Tagihan: <span id="cart-pos-total" style="color: var(--primary-accent);">Rp 0</span>
             </p>
-            <label style="font-size: 0.85rem;">Uang Tunai Pembeli (Rp):</label>
-            <input type="text" inputmode="numeric" id="bayar-uang" placeholder="Contoh: 50.000" oninput="formatRibuanInput(this); hitungKembalian();">
-            <p style="font-weight: bold; color: var(--danger); margin-bottom: 15px; font-size: 1.05rem;">
-              Kembalian: <span id="bayar-kembali">Rp 0</span>
-            </p>
-            <button class="btn-add-cart" onclick="prosesTransaksi()">Simpan &amp; Cetak Nota Belanja</button>
+
+            <label style="font-size: 0.85rem; display:block; margin-bottom:6px;">Metode Pembayaran:</label>
+            <div class="pay-method-group">
+              <button type="button" class="pay-method-btn active" id="pay-btn-cash" onclick="setPaymentMethod('Cash')">
+                <i class="fa-solid fa-money-bill-wave"></i> Cash
+              </button>
+              <button type="button" class="pay-method-btn" id="pay-btn-qris" onclick="setPaymentMethod('QRIS')">
+                <i class="fa-solid fa-qrcode"></i> QRIS
+              </button>
+            </div>
+
+            <div id="cash-input-wrap">
+              <label style="font-size: 0.85rem;">Uang Tunai Pembeli (Rp):</label>
+              <input type="text" inputmode="numeric" id="bayar-uang" placeholder="Contoh: 50.000" oninput="formatRibuanInput(this); hitungKembalian();">
+              <p style="font-weight: bold; color: var(--danger); margin-bottom: 15px; font-size: 1.05rem;">
+                Kembalian: <span id="bayar-kembali">Rp 0</span>
+              </p>
+            </div>
+
+            <div id="qris-info-wrap" class="hidden" style="background:#18241d; border:1px solid var(--success); border-radius:8px; padding:10px; margin-bottom:14px; font-size:0.85rem; color:var(--success);">
+              <i class="fa-solid fa-circle-check"></i> Pembayaran QRIS sesuai total tagihan (Kembalian Rp 0).
+            </div>
+
+            <button class="btn-add-cart" style="width:100%;" onclick="prosesTransaksi()">Simpan &amp; Cetak Nota Belanja</button>
           </div>
         </div>
       </div>
@@ -553,6 +763,7 @@
                 <th>Nomor Nota</th>
                 <th>Waktu</th>
                 <th>Kasir</th>
+                <th>Metode</th>
                 <th>Barang Dibeli</th>
                 <th>Total</th>
                 <th>Bayar</th>
@@ -567,7 +778,7 @@
 
       <!-- TAB 3: ABSENSI JAM KERJA KASIR + PETA LOKASI -->
       <div id="kasir-tab-absensi" class="card hidden">
-        <h2><i class="fa-solid fa-clipboard-user"></i> Absensi Kehadiran Staf Kasir</h2>
+        <h2><i class="fa-solid fa-clipboard-user"></i> Absensi Kehadiran &amp; Lokasi Kasir</h2>
         <form onsubmit="simpanAbsensi(event)" style="margin-bottom: 24px;">
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">
             <select id="absen-shift" required style="flex: 1;">
@@ -593,7 +804,7 @@
           <iframe id="kasir-gps-map" class="gps-map-preview hidden" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 
           <input type="text" id="absen-catatan" placeholder="Catatan jam kerja / lembur (Opsional)">
-          <button type="submit" class="btn-add-cart">Simpan Absensi &amp; Lokasi</button>
+          <button type="submit" class="btn-add-cart" style="width: 100%;">Simpan Absensi &amp; Lokasi</button>
         </form>
 
         <h3 style="font-size: 1rem; color: var(--primary-accent); margin-bottom: 10px;">Riwayat Absensi Terbaru</h3>
@@ -618,6 +829,29 @@
 
   </div>
 
+  <!-- MODAL BELI BEBAS / ECERAN (NOMINAL UANG / GRAM) -->
+  <div id="modal-custom-eceran" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-scale-balanced"></i> Beli Bebas (Sesuai Uang Pembeli)</h3>
+        <button class="modal-close" onclick="closeCustomModal()">&times;</button>
+      </div>
+      <form onsubmit="submitCustomEceran(event)">
+        <input type="hidden" id="custom-prod-id">
+        <p id="custom-prod-info" style="font-weight:700; color:#fff; margin-bottom:12px;"></p>
+
+        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:4px;">Uang Pembeli / Harga (Rp)</label>
+        <input type="text" inputmode="numeric" id="custom-harga-input" placeholder="Contoh: 15.000" required oninput="formatRibuanInput(this); hitungGramDariNominal();">
+
+        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:4px;">Jumlah Berat (gram)</label>
+        <input type="number" id="custom-gram-input" min="1" required>
+        <p id="custom-stok-hint" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;"></p>
+
+        <button type="submit" class="btn-add-cart" style="width:100%;">Masukkan ke Nota Belanja</button>
+      </form>
+    </div>
+  </div>
+
   <!-- TEMPLATE NOTA PRINT -->
   <div id="receipt-print">
     <div style="text-align: center; margin-bottom: 8px;">
@@ -630,6 +864,7 @@
       <p>NO: <span id="print-id"></span></p>
       <p>WAKTU: <span id="print-waktu"></span></p>
       <p>KASIR: <b id="print-kasir"></b></p>
+      <p>METODE: <b id="print-metode"></b></p>
     </div>
     <p>================================</p>
     <div id="print-items" style="font-size: 11px;"></div>
@@ -648,14 +883,16 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const DEFAULT_IMG = @json(asset('assets/logo-icon.jpg'));
     const TOBACCO_CATS = ['tembako olahan', 'original', 'racik'];
+    const ITEMS_PER_PAGE = 9;
 
     let db = { produk: [], absensi: [], penjualan: [], pembelian: [] };
     let filters = {
-      customer: { cat: 'all', ons: 'all', q: '' },
-      kasir: { cat: 'all', ons: 'all', q: '' },
+      customer: { cat: 'all', ons: 'all', q: '', page: 1 },
+      kasir: { cat: 'all', ons: 'all', q: '', page: 1 },
     };
     let waCart = [];
     let posCart = [];
+    let paymentMethod = 'Cash';
     let currentUser = @json($currentUser);
     let gpsCoords = { latitude: null, longitude: null, akurasi: null };
 
@@ -706,7 +943,7 @@
 
     async function loadData() {
       try {
-        db = await apiRequest('/api/pos/all');
+        db = await apiRequest('/pos-api/all');
         renderCatalog('customer');
         if (currentUser && currentUser.role === 'kasir') {
           renderCatalog('kasir');
@@ -724,11 +961,13 @@
 
     function setSearch(scope, query) {
       filters[scope].q = (query || '').trim().toLowerCase();
+      filters[scope].page = 1;
       renderCatalog(scope);
     }
 
     function filterKategori(scope, kat, btnEl) {
       filters[scope].cat = kat;
+      filters[scope].page = 1;
       document.querySelectorAll(`#${scope}-cat-bar .filter-btn`).forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
       renderCatalog(scope);
@@ -736,8 +975,14 @@
 
     function filterOns(scope, ons, btnEl) {
       filters[scope].ons = ons;
+      filters[scope].page = 1;
       document.querySelectorAll(`#${scope}-ons-bar .filter-btn`).forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
+      renderCatalog(scope);
+    }
+
+    function goToPage(scope, page) {
+      filters[scope].page = page;
       renderCatalog(scope);
     }
 
@@ -756,7 +1001,8 @@
 
     function renderCatalog(scope) {
       const container = document.getElementById(scope === 'customer' ? 'customer-catalog-grid' : 'kasir-catalog-grid');
-      const { cat, ons, q } = filters[scope];
+      const pagEl = document.getElementById(scope === 'customer' ? 'customer-pagination' : 'kasir-pagination');
+      const { cat, ons, q, page } = filters[scope];
 
       const filtered = db.produk.filter(p => {
         if (cat !== 'all' && p.kategori.toLowerCase() !== cat.toLowerCase()) return false;
@@ -765,22 +1011,33 @@
         return true;
       });
 
+      const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+      const safePage = Math.min(Math.max(1, page), totalPages);
+      filters[scope].page = safePage;
+      const startIdx = (safePage - 1) * ITEMS_PER_PAGE;
+      const pageItems = filtered.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
       const addFn = scope === 'customer' ? 'addToWACart' : 'addToPOSCart';
 
-      container.innerHTML = filtered.map(p => {
+      container.innerHTML = pageItems.map(p => {
         const tobacco = isTobacco(p.kategori);
         const halfPrice = p.harga_setengah_ons ?? Math.round(p.harga_jual / 2);
+        const isHabis = Number(p.stok) <= 0;
+        const disabledAttr = isHabis ? 'disabled' : '';
 
         let priceHtml = `<div class="product-price">${formatRupiah(p.harga_jual)} / ${p.satuan}</div>`;
-        let buttonsHtml = `<button class="btn-add-cart" onclick="${addFn}(${p.id}, 'satuan')">+ Tambah</button>`;
+        let buttonsHtml = `<button class="btn-add-cart" ${disabledAttr} onclick="${addFn}(${p.id}, 'satuan')">${isHabis ? 'Stok Habis' : '+ Tambah'}</button>`;
 
         if (tobacco) {
           if (ons === '1_ons') {
             priceHtml = `<div class="product-price">${formatRupiah(p.harga_jual)} <span class="product-subprice">Takaran 1 Ons (100 gram)</span></div>`;
-            buttonsHtml = `<button class="btn-add-cart" onclick="${addFn}(${p.id}, '1_ons')">+ 1 Ons (100g)</button>`;
+            buttonsHtml = `<button class="btn-add-cart" ${disabledAttr} onclick="${addFn}(${p.id}, '1_ons')">+ 1 Ons (100g)</button>`;
           } else if (ons === 'setengah_ons') {
             priceHtml = `<div class="product-price">${formatRupiah(halfPrice)} <span class="product-subprice">Takaran 1/2 Ons (50 gram)</span></div>`;
-            buttonsHtml = `<button class="btn-add-cart" onclick="${addFn}(${p.id}, 'setengah_ons')">+ 1/2 Ons (50g)</button>`;
+            buttonsHtml = `<button class="btn-add-cart" ${disabledAttr} onclick="${addFn}(${p.id}, 'setengah_ons')">+ 1/2 Ons (50g)</button>`;
+          } else if (ons === 'custom' && scope === 'kasir') {
+            priceHtml = `<div class="product-price">${formatRupiah(p.harga_jual)} / 1 Ons <span class="product-subprice">Input nominal bebas</span></div>`;
+            buttonsHtml = `<button class="btn-add-custom" style="margin-top:0;" ${disabledAttr} onclick="openCustomModal(${p.id})">+ Beli Bebas (Rp / gram)</button>`;
           } else {
             priceHtml = `
               <div class="product-price">
@@ -789,15 +1046,16 @@
               </div>`;
             buttonsHtml = `
               <div class="btn-row">
-                <button class="btn-add-cart" onclick="${addFn}(${p.id}, '1_ons')">+ 1 Ons</button>
-                <button class="btn-add-half" onclick="${addFn}(${p.id}, 'setengah_ons')">+ 1/2 Ons</button>
-              </div>`;
+                <button class="btn-add-cart" ${disabledAttr} onclick="${addFn}(${p.id}, '1_ons')">+ 1 Ons</button>
+                <button class="btn-add-half" ${disabledAttr} onclick="${addFn}(${p.id}, 'setengah_ons')">+ 1/2 Ons</button>
+              </div>
+              ${scope === 'kasir' ? `<button class="btn-add-custom" ${disabledAttr} onclick="openCustomModal(${p.id})">+ Beli Bebas (Rp)</button>` : ''}`;
           }
         }
 
-        const stokInfo = scope === 'kasir'
-          ? `<div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">Stok: ${p.stok} ${p.satuan}</div>`
-          : '';
+        const stokHtml = isHabis
+          ? `<div class="product-stock stock-empty">Stok: Habis (0 ${p.satuan})</div>`
+          : `<div class="product-stock stock-ok">Stok tersedia: ${Number(p.stok).toLocaleString('id-ID')} ${p.satuan}</div>`;
 
         return `
           <div class="product-card">
@@ -810,13 +1068,24 @@
                 <div class="product-category">${p.kategori}</div>
                 <div class="product-title">${p.nama}</div>
                 ${priceHtml}
-                ${stokInfo}
+                ${stokHtml}
               </div>
-              ${buttonsHtml}
+              <div>${buttonsHtml}</div>
             </div>
           </div>
         `;
       }).join('') || '<p style="color:var(--text-muted);">Barang yang dicari tidak ditemukan.</p>';
+
+      if (totalPages <= 1) {
+        pagEl.innerHTML = '';
+      } else {
+        let btns = `<button class="page-btn" ${safePage <= 1 ? 'disabled' : ''} onclick="goToPage('${scope}', ${safePage - 1})">&laquo; Sebelumnya</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+          btns += `<button class="page-btn ${i === safePage ? 'active' : ''}" onclick="goToPage('${scope}', ${i})">${i}</button>`;
+        }
+        btns += `<button class="page-btn" ${safePage >= totalPages ? 'disabled' : ''} onclick="goToPage('${scope}', ${safePage + 1})">Berikutnya &raquo;</button>`;
+        pagEl.innerHTML = btns;
+      }
     }
 
     function buildCartItem(p, takaran) {
@@ -832,7 +1101,7 @@
 
     function addToWACart(id, takaran) {
       const p = db.produk.find(prod => prod.id == id);
-      if (!p) return;
+      if (!p || p.stok <= 0) return;
       const existing = waCart.find(i => i.id == id && i.takaran === takaran);
       if (existing) existing.qty++;
       else waCart.push(buildCartItem(p, takaran));
@@ -885,16 +1154,20 @@
     async function handleLogin(e) {
       e.preventDefault();
       try {
-        const res = await apiRequest('/api/pos/login', {
+        const res = await apiRequest('/pos-api/login', {
           method: 'POST',
           body: JSON.stringify({
             username: document.getElementById('login-username').value,
             password: document.getElementById('login-password').value,
             role: 'kasir',
+            latitude: gpsCoords.latitude,
+            longitude: gpsCoords.longitude,
+            akurasi: gpsCoords.akurasi,
           }),
         });
         currentUser = res.user;
         document.getElementById('login-password').value = '';
+        await loadData();
         renderRole('kasir');
       } catch (err) {
         alert(err.message);
@@ -903,7 +1176,7 @@
 
     async function logout() {
       try {
-        await apiRequest('/api/pos/logout', { method: 'POST', body: JSON.stringify({}) });
+        await apiRequest('/pos-api/logout', { method: 'POST', body: JSON.stringify({}) });
       } catch (e) {}
       currentUser = null;
       switchRole('customer');
@@ -927,11 +1200,67 @@
 
     function addToPOSCart(id, takaran) {
       const p = db.produk.find(prod => prod.id == id);
-      if (!p) return;
+      if (!p || p.stok <= 0) return;
       const existing = posCart.find(i => i.id == id && i.takaran === takaran);
       if (existing) existing.qty++;
       else posCart.push(buildCartItem(p, takaran));
       renderPOSCart();
+    }
+
+    function openCustomModal(id) {
+      const p = db.produk.find(prod => prod.id == id);
+      if (!p) return;
+      document.getElementById('custom-prod-id').value = p.id;
+      document.getElementById('custom-prod-info').innerText = `${p.nama} (${formatRupiah(p.harga_jual)} / 100 gram)`;
+      document.getElementById('custom-stok-hint').innerText = `Stok tersedia saat ini: ${p.stok} ${p.satuan}`;
+      document.getElementById('custom-harga-input').value = '';
+      document.getElementById('custom-gram-input').value = '';
+      document.getElementById('modal-custom-eceran').classList.remove('hidden');
+    }
+
+    function closeCustomModal() {
+      document.getElementById('modal-custom-eceran').classList.add('hidden');
+    }
+
+    function hitungGramDariNominal() {
+      const id = document.getElementById('custom-prod-id').value;
+      const p = db.produk.find(prod => prod.id == id);
+      if (!p || p.harga_jual <= 0) return;
+      const nominal = parseAngka(document.getElementById('custom-harga-input').value);
+      const gram = Math.max(1, Math.round((nominal / p.harga_jual) * 100));
+      document.getElementById('custom-gram-input').value = nominal > 0 ? gram : '';
+    }
+
+    function submitCustomEceran(e) {
+      e.preventDefault();
+      const id = document.getElementById('custom-prod-id').value;
+      const p = db.produk.find(prod => prod.id == id);
+      if (!p) return;
+      const nominal = parseAngka(document.getElementById('custom-harga-input').value);
+      const gram = Number(document.getElementById('custom-gram-input').value) || 0;
+      if (nominal < 100 || gram < 1) return alert('Masukkan nominal uang dan berat gram yang sesuai!');
+      if (gram > p.stok) return alert(`Stok tidak mencukupi (sisa ${p.stok} ${p.satuan}).`);
+
+      posCart.push({
+        id: p.id,
+        nama: p.nama,
+        takaran: 'custom',
+        satuanLabel: `${gram} gram (Eceran)`,
+        harga: nominal,
+        custom_gram: gram,
+        custom_harga: nominal,
+        qty: 1,
+      });
+      closeCustomModal();
+      renderPOSCart();
+    }
+
+    function setPaymentMethod(method) {
+      paymentMethod = method;
+      document.getElementById('pay-btn-cash').classList.toggle('active', method === 'Cash');
+      document.getElementById('pay-btn-qris').classList.toggle('active', method === 'QRIS');
+      document.getElementById('cash-input-wrap').classList.toggle('hidden', method !== 'Cash');
+      document.getElementById('qris-info-wrap').classList.toggle('hidden', method !== 'QRIS');
     }
 
     function renderPOSCart() {
@@ -962,15 +1291,21 @@
 
     async function prosesTransaksi() {
       const total = posCart.reduce((a, i) => a + (i.harga * i.qty), 0);
-      const bayar = parseAngka(document.getElementById('bayar-uang').value);
+      const bayar = paymentMethod === 'QRIS' ? total : parseAngka(document.getElementById('bayar-uang').value);
       if (posCart.length === 0) return alert('Keranjang Kasir masih kosong!');
-      if (bayar < total) return alert('Uang tunai pembeli kurang!');
+      if (paymentMethod === 'Cash' && bayar < total) return alert('Uang tunai pembeli kurang!');
 
       try {
-        const res = await apiRequest('/api/pos/penjualan', {
+        const res = await apiRequest('/pos-api/penjualan', {
           method: 'POST',
           body: JSON.stringify({
-            items: posCart.map(i => ({ id: i.id, qty: i.qty, takaran: i.takaran })),
+            items: posCart.map(i => ({
+              id: i.id,
+              qty: i.qty,
+              takaran: i.takaran,
+              ...(i.takaran === 'custom' ? { custom_gram: i.custom_gram, custom_harga: i.custom_harga } : {}),
+            })),
+            metode_pembayaran: paymentMethod,
             bayar: bayar,
           }),
         });
@@ -994,6 +1329,7 @@
             <td><b>${t.kode_transaksi}</b></td>
             <td>${t.waktu}</td>
             <td>${t.kasir}</td>
+            <td><b>${t.metode_pembayaran || 'Cash'}</b></td>
             <td>${itemsHtml}</td>
             <td><b>${formatRupiah(t.total)}</b></td>
             <td>${formatRupiah(t.bayar)}</td>
@@ -1001,7 +1337,7 @@
             <td><button class="btn-sm" onclick="cetakStrukDariRiwayat(${idx})"><i class="fa-solid fa-print"></i> Cetak</button></td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Belum ada transaksi penjualan.</td></tr>';
+      }).join('') || '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Belum ada transaksi penjualan.</td></tr>';
     }
 
     function renderKasirAbsensi() {
@@ -1009,7 +1345,7 @@
       tbody.innerHTML = db.absensi.map(a => {
         const locText = (a.latitude && a.longitude)
           ? `Akurasi ±${a.akurasi ?? '-'} m<br><a href="https://maps.google.com/?q=${a.latitude},${a.longitude}" target="_blank" style="color:var(--primary-accent);">Buka Peta</a>`
-          : 'Lokasi tidak tersedia';
+          : 'Lokasi belum diambil';
         return `
           <tr>
             <td>${a.waktu}</td>
@@ -1054,6 +1390,7 @@
         id: t.kode_transaksi,
         waktu: t.waktu,
         kasir: t.kasir,
+        metode_pembayaran: t.metode_pembayaran || 'Cash',
         items: t.items || [],
         total: t.total,
         bayar: t.bayar,
@@ -1065,6 +1402,7 @@
       document.getElementById('print-id').innerText = trx.id;
       document.getElementById('print-waktu').innerText = trx.waktu;
       document.getElementById('print-kasir').innerText = trx.kasir;
+      document.getElementById('print-metode').innerText = trx.metode_pembayaran || 'Cash';
       document.getElementById('print-items').innerHTML = trx.items.map(i => `
         <div style="display:flex; justify-content:space-between;">
           <span>${i.nama} (${i.qty}x ${i.satuan})</span>
@@ -1080,7 +1418,7 @@
     async function simpanAbsensi(e) {
       e.preventDefault();
       try {
-        await apiRequest('/api/pos/absensi', {
+        await apiRequest('/pos-api/absensi', {
           method: 'POST',
           body: JSON.stringify({
             shift: document.getElementById('absen-shift').value,

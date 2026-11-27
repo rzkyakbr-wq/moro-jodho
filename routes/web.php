@@ -8,12 +8,13 @@ Route::get('/', fn () => view('welcome'))->name('home');
 
 // Frontend: Pelanggan & Kasir
 Route::get('/kasir', [PosController::class, 'index'])->name('pos.index');
+Route::get('/absen-qr', [PosController::class, 'absenQrPage'])->name('absen.qr');
 
 // Backend: Khusus Pemilik Toko (Owner)
 Route::get('/owner', [PosController::class, 'ownerIndex'])->name('owner.index');
 Route::get('/owner/export', [PosController::class, 'exportExcel'])->name('owner.export');
 
-Route::prefix('api/pos')->group(function () {
+Route::prefix('pos-api')->group(function () {
     Route::get('/all', [PosController::class, 'getAll']);
     Route::post('/login', [PosController::class, 'login']);
     Route::post('/logout', [PosController::class, 'logout']);
@@ -27,4 +28,6 @@ Route::prefix('api/pos')->group(function () {
     Route::delete('/produk/{id}', [PosController::class, 'deleteProduk']);
     Route::post('/penjualan', [PosController::class, 'addPenjualan']);
     Route::post('/absensi', [PosController::class, 'addAbsensi']);
+    Route::post('/absen-qr', [PosController::class, 'submitAbsenQr']);
+    Route::post('/qr/regenerate', [PosController::class, 'regenerateQr']);
 });

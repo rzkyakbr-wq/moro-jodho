@@ -13,6 +13,7 @@ class Penjualan extends Model
         'total',
         'bayar',
         'kembali',
+        'metode_pembayaran',
         'waktu',
     ];
 

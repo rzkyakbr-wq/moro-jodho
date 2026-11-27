@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -28,6 +29,12 @@ class DatabaseSeeder extends Seeder
 
         if (! Setting::where('key', 'kasir_code')->exists()) {
             Setting::setValue('kasir_code', env('POS_KASIR_PIN', 'MJ-KASIR-2026'));
+        }
+        if (! Setting::where('key', 'qr_masuk_token')->exists()) {
+            Setting::setValue('qr_masuk_token', Str::random(48));
+        }
+        if (! Setting::where('key', 'qr_pulang_token')->exists()) {
+            Setting::setValue('qr_pulang_token', Str::random(48));
         }
 
         if (Produk::count() > 0) {

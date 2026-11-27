@@ -8,8 +8,20 @@
   },
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "dest": "/public/assets/$1"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/public/uploads/$1"
+    },
+    {
       "src": "/build/(.*)",
       "dest": "/public/build/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/public/favicon.ico"
     },
     {
       "src": "/(.*)",
@@ -21,6 +33,9 @@
     "APP_SERVICES_CACHE": "/tmp/services.php",
     "APP_PACKAGES_CACHE": "/tmp/packages.php",
     "APP_ROUTES_CACHE": "/tmp/routes.php",
-    "VIEW_COMPILED_PATH": "/tmp"
+    "VIEW_COMPILED_PATH": "/tmp",
+    "SESSION_DRIVER": "cookie",
+    "SESSION_SECURE_COOKIE": "true",
+    "CACHE_STORE": "array"
   }
 }

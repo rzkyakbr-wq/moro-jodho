@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class PosController extends Controller
 {
@@ -47,15 +49,22 @@ class PosController extends Controller
         $user = $request->session()->get('pos_user');
         $payload = [
             'produk' => Produk::orderBy('id')->get(),
-            'absensi' => Absensi::latest()->limit(100)->get(),
-            'penjualan' => Penjualan::latest()->limit(500)->get(),
-            'pembelian' => Pembelian::with('produk:id,nama,satuan,kategori')->latest()->limit(500)->get(),
         ];
+
+        if ($user && in_array($user['role'], ['owner', 'kasir'], true)) {
+            $payload += [
+                'absensi' => Absensi::latest()->limit(100)->get(),
+                'penjualan' => Penjualan::latest()->limit(500)->get(),
+                'pembelian' => Pembelian::with('produk:id,nama,satuan,kategori')->latest()->limit(500)->get(),
+            ];
+        }
 
         if ($user && $user['role'] === 'owner') {
             $owner = User::where('role', 'owner')->first();
             $payload['kasir_code'] = Setting::getValue('kasir_code', env('POS_KASIR_PIN', 'MJ-KASIR-2026'));
             $payload['owner_email'] = $owner?->email ?? '';
+            $payload['qr_masuk_token'] = $this->qrTokenFor('masuk');
+            $payload['qr_pulang_token'] = $this->qrTokenFor('pulang');
         }
 
         return response()->json($payload);
@@ -67,6 +76,9 @@ class PosController extends Controller
             'username' => ['required', 'string', 'max:100'],
             'password' => ['required', 'string'],
             'role' => ['required', 'in:kasir,owner'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'akurasi' => ['nullable', 'integer', 'min:0'],
         ]);
 
         if ($validated['role'] === 'owner') {
@@ -101,6 +113,21 @@ class PosController extends Controller
                 'username' => trim($validated['username']),
                 'role' => 'kasir',
             ];
+
+            $nowJkt = now('Asia/Jakarta');
+            $shiftLabel = $nowJkt->hour < 12 ? 'Shift 1 (09:00 - 12:00)' : 'Shift 2 (12:00 - 21:00)';
+            Absensi::create([
+                'karyawan' => $user['username'],
+                'shift' => $shiftLabel,
+                'tipe' => 'masuk',
+                'is_lembur' => false,
+                'status' => 'Hadir',
+                'catatan' => 'Otomatis tercatat hadir saat masuk kasir',
+                'waktu' => $nowJkt->format('d/m/Y, H.i.s'),
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
+                'akurasi' => $validated['akurasi'] ?? null,
+            ]);
         }
 
         $request->session()->put('pos_user', $user);
@@ -434,11 +461,17 @@ class PosController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'exists:produks,id'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
-            'items.*.takaran' => ['nullable', 'in:1_ons,setengah_ons,satuan'],
+            'items.*.takaran' => ['nullable', 'in:1_ons,setengah_ons,satuan,custom'],
+            'items.*.custom_gram' => ['nullable', 'integer', 'min:1'],
+            'items.*.custom_harga' => ['nullable', 'integer', 'min:100'],
+            'metode_pembayaran' => ['nullable', 'in:Cash,QRIS'],
             'bayar' => ['required', 'integer', 'min:0'],
         ]);
 
-        $result = DB::transaction(function () use ($validated, $user) {
+        $metode = $validated['metode_pembayaran'] ?? 'Cash';
+        $habisItems = [];
+
+        $result = DB::transaction(function () use ($validated, $user, $metode, &$habisItems) {
             $total = 0;
             $lineItems = [];
 
@@ -447,7 +480,16 @@ class PosController extends Controller
                 $qty = (int) $entry['qty'];
                 $takaran = $entry['takaran'] ?? ($this->isTobacco($produk->kategori) ? '1_ons' : 'satuan');
 
-                if ($takaran === '1_ons') {
+                if ($takaran === 'custom') {
+                    $customGram = (int) ($entry['custom_gram'] ?? 0);
+                    $customHarga = (int) ($entry['custom_harga'] ?? 0);
+                    if ($customGram < 1 || $customHarga < 100) {
+                        abort(422, "Jumlah gram atau nominal untuk {$produk->nama} tidak valid.");
+                    }
+                    $stokKeluar = $qty * $customGram;
+                    $hargaSatuan = $customHarga;
+                    $takaranLabel = "{$customGram} gram (Eceran)";
+                } elseif ($takaran === '1_ons') {
                     $stokKeluar = $qty * 100;
                     $hargaSatuan = $produk->harga_jual;
                     $takaranLabel = '1 Ons (100g)';
@@ -466,6 +508,11 @@ class PosController extends Controller
                 }
 
                 $produk->decrement('stok', $stokKeluar);
+                $produk->refresh();
+                if ($produk->stok <= 0) {
+                    $habisItems[] = $produk->nama;
+                }
+
                 $total += $hargaSatuan * $qty;
 
                 $lineItems[] = [
@@ -478,7 +525,9 @@ class PosController extends Controller
                 ];
             }
 
-            if ($validated['bayar'] < $total) {
+            $bayar = $metode === 'QRIS' ? $total : $validated['bayar'];
+
+            if ($bayar < $total) {
                 abort(422, 'Uang Tunai Kurang!');
             }
 
@@ -487,14 +536,22 @@ class PosController extends Controller
                 'kasir' => $user['username'],
                 'items' => $lineItems,
                 'total' => $total,
-                'bayar' => $validated['bayar'],
-                'kembali' => $validated['bayar'] - $total,
+                'bayar' => $bayar,
+                'kembali' => $bayar - $total,
+                'metode_pembayaran' => $metode,
                 'waktu' => now('Asia/Jakarta')->format('d/m/Y, H.i.s'),
             ]);
         });
 
+        $emailTerkirim = true;
+        if (count($habisItems) > 0) {
+            $emailTerkirim = $this->sendOutOfStockAlert(array_values(array_unique($habisItems)));
+        }
+
         return response()->json([
             'message' => 'Transaksi berhasil diproses & stok otomatis diperbarui',
+            'stok_habis' => $habisItems,
+            'peringatan' => $emailTerkirim ? null : 'Transaksi berhasil, tetapi email pemberitahuan stok habis belum dapat dikirim.',
             'transaksi' => [
                 'id' => $result->kode_transaksi,
                 'waktu' => $result->waktu,
@@ -503,6 +560,7 @@ class PosController extends Controller
                 'total' => $result->total,
                 'bayar' => $result->bayar,
                 'kembali' => $result->kembali,
+                'metode_pembayaran' => $result->metode_pembayaran,
             ],
         ], 201);
     }
@@ -514,30 +572,200 @@ class PosController extends Controller
             return response()->json(['message' => 'Silakan masuk sebagai Kasir terlebih dahulu.'], 403);
         }
 
+        return response()->json([
+            'message' => 'Gunakan QR absensi Masuk atau Pulang yang disediakan pemilik toko.',
+        ], 410);
+    }
+
+    public function absenQrPage(Request $request): View
+    {
+        $tipe = $request->query('tipe') === 'pulang' ? 'pulang' : 'masuk';
+        $token = (string) $request->query('token', '');
+        $expected = $this->qrTokenFor($tipe);
+
+        return view('absen_qr', [
+            'tipe' => $tipe,
+            'token' => $token,
+            'valid' => hash_equals($expected, $token),
+            'currentUser' => $request->session()->get('pos_user'),
+        ]);
+    }
+
+    public function submitAbsenQr(Request $request): JsonResponse
+    {
         $validated = $request->validate([
-            'shift' => ['required', 'string', 'max:100'],
-            'status' => ['required', 'string', 'max:50'],
+            'tipe' => ['required', 'in:masuk,pulang'],
+            'token' => ['required', 'string'],
+            'karyawan' => ['required', 'string', 'max:100', 'regex:/^[\pL\pM0-9 .\'-]+$/u'],
+            'kasir_code' => ['nullable', 'string'],
             'catatan' => ['nullable', 'string', 'max:255'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'akurasi' => ['nullable', 'integer', 'min:0'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'akurasi' => ['required', 'integer', 'min:0'],
         ]);
 
-        $absensi = Absensi::create([
-            'karyawan' => $user['username'],
-            'shift' => $validated['shift'],
-            'status' => $validated['status'],
-            'catatan' => $validated['catatan'] ?: '-',
-            'waktu' => now('Asia/Jakarta')->format('d/m/Y, H.i.s'),
-            'latitude' => $validated['latitude'] ?? null,
-            'longitude' => $validated['longitude'] ?? null,
-            'akurasi' => $validated['akurasi'] ?? null,
-        ]);
+        $sessionUser = $request->session()->get('pos_user');
+        if (! $sessionUser || $sessionUser['role'] !== 'kasir') {
+            $kasirCode = Setting::getValue('kasir_code', env('POS_KASIR_PIN', 'MJ-KASIR-2026'));
+            if (($validated['kasir_code'] ?? '') !== $kasirCode) {
+                return response()->json(['message' => 'Kode Masuk Kasir salah!'], 401);
+            }
+        }
+
+        $karyawan = $sessionUser && $sessionUser['role'] === 'kasir'
+            ? trim($sessionUser['username'])
+            : trim($validated['karyawan']);
+        $nowJkt = now('Asia/Jakarta');
+        $tipe = $validated['tipe'];
+
+        $absensi = DB::transaction(function () use ($validated, $karyawan, $nowJkt, $tipe) {
+            $tokens = Setting::whereIn('key', ['qr_masuk_token', 'qr_pulang_token'])
+                ->orderBy('key')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('key');
+            $expectedToken = $tokens->get($tipe === 'pulang' ? 'qr_pulang_token' : 'qr_masuk_token')?->value ?? '';
+
+            if ($expectedToken === '' || ! hash_equals($expectedToken, $validated['token'])) {
+                abort(403, 'QR Code tidak berlaku atau sudah diperbarui oleh Pemilik Toko.');
+            }
+
+            $today = $nowJkt->toDateString();
+            $utcStart = $nowJkt->copy()->startOfDay()->utc();
+            $utcEnd = $nowJkt->copy()->endOfDay()->utc();
+            $todayRecords = Absensi::where('karyawan', $karyawan)
+                ->where(function ($query) use ($today, $utcStart, $utcEnd) {
+                    $query->whereDate('tanggal_kerja', $today)
+                        ->orWhereBetween('created_at', [$utcStart, $utcEnd]);
+                })
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+            $masuk = $todayRecords->firstWhere('tipe', 'masuk');
+
+            if ($tipe === 'masuk') {
+                if ($masuk || $todayRecords->contains('tipe', 'pulang')) {
+                    abort(409, 'Absensi masuk hari ini sudah tercatat.');
+                }
+
+                $shift = $nowJkt->hour < 12 ? 'Shift 1 (09:00 - 12:00)' : 'Shift 2 (12:00 - 21:00)';
+                $isLembur = false;
+            } else {
+                if (! $masuk) {
+                    abort(422, 'Absensi pulang belum dapat dicatat karena absensi masuk hari ini belum ada.');
+                }
+
+                if ($todayRecords->contains('tipe', 'pulang')) {
+                    abort(409, 'Absensi pulang hari ini sudah tercatat.');
+                }
+
+                $jamMasuk = $masuk->created_at->copy()->timezone('Asia/Jakarta');
+                $durasiMenit = $jamMasuk->diffInMinutes($nowJkt);
+                $masukAwal = $jamMasuk->format('H:i') <= '10:00';
+                $pulangMalam = $nowJkt->format('H:i') >= '20:45';
+                $isLembur = ($masukAwal && $pulangMalam) || $durasiMenit >= 660;
+                $shift = $isLembur ? 'Full Day / Lembur (09:00 - 21:00)' : $masuk->shift;
+
+                if ($isLembur) {
+                    $masuk->is_lembur = true;
+                    $masuk->shift = $shift;
+                    $masuk->save();
+                }
+            }
+
+            return Absensi::create([
+                'karyawan' => $karyawan,
+                'shift' => $shift,
+                'tipe' => $tipe,
+                'is_lembur' => $isLembur,
+                'status' => 'Hadir',
+                'catatan' => ($validated['catatan'] ?? '') ?: ('Scan QR ' . ucfirst($tipe)),
+                'waktu' => $nowJkt->format('d/m/Y, H.i.s'),
+                'tanggal_kerja' => $today,
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'akurasi' => $validated['akurasi'],
+            ]);
+        });
 
         return response()->json([
-            'message' => 'Absensi & lokasi berhasil disimpan!',
+            'message' => $absensi->is_lembur
+                ? "Absen {$tipe} berhasil dicatat sebagai LEMBUR (09:00 - 21:00)!"
+                : "Absen {$tipe} berhasil dicatat pada {$nowJkt->format('H:i:s')} WIB!",
             'absensi' => $absensi,
         ], 201);
+    }
+
+    public function regenerateQr(Request $request): JsonResponse
+    {
+        $user = $request->session()->get('pos_user');
+        if (! $user || $user['role'] !== 'owner') {
+            return response()->json(['message' => 'Akses ditolak. Khusus Pemilik Toko.'], 403);
+        }
+
+        $validated = $request->validate([
+            'tipe' => ['required', 'in:masuk,pulang'],
+        ]);
+
+        $key = $validated['tipe'] === 'pulang' ? 'qr_pulang_token' : 'qr_masuk_token';
+        $newToken = Str::random(48);
+
+        Setting::setValue($key, $newToken);
+
+        return response()->json([
+            'message' => 'QR Absen ' . ucfirst($validated['tipe']) . ' berhasil diperbarui!',
+            'token' => $newToken,
+        ]);
+    }
+
+    private function qrTokenFor(string $tipe): string
+    {
+        $key = $tipe === 'pulang' ? 'qr_pulang_token' : 'qr_masuk_token';
+        $token = Setting::getValue($key);
+        $legacyToken = $tipe === 'pulang' ? 'MJ-QR-PULANG-PERMANEN' : 'MJ-QR-MASUK-PERMANEN';
+
+        if ($token !== '' && ! hash_equals($legacyToken, $token)) {
+            return $token;
+        }
+
+        $token = Str::random(48);
+        Setting::setValue($key, $token);
+
+        return $token;
+    }
+
+    private function sendOutOfStockAlert(array $productNames): bool
+    {
+        $ownerEmail = User::where('role', 'owner')->value('email');
+        if (! $ownerEmail) {
+            Log::warning('Out-of-stock email was not sent because no owner email is configured.', [
+                'products' => $productNames,
+            ]);
+
+            return false;
+        }
+
+        $list = implode("\n- ", $productNames);
+
+        try {
+            Mail::raw(
+                "Pemberitahuan Stok Habis - Toko Moro Jodho\n\nBarang berikut stoknya baru saja habis (0):\n- {$list}\n\nSilakan segera lakukan kulakan / isi ulang stok melalui halaman Pemilik Toko.",
+                function ($message) use ($ownerEmail) {
+                    $message->to($ownerEmail)
+                        ->subject('Peringatan Stok Barang Habis - Toko Moro Jodho');
+                }
+            );
+        } catch (TransportExceptionInterface $exception) {
+            Log::error('Out-of-stock email delivery failed.', [
+                'exception' => $exception,
+                'products' => $productNames,
+                'owner_email' => $ownerEmail,
+            ]);
+
+            return false;
+        }
+
+        return true;
     }
 
     public function exportExcel(Request $request): Response
@@ -587,10 +815,10 @@ class PosController extends Controller
 
         $penjualanSection = $this->buildExcelSection(
             '2. Laporan Rincian Penjualan',
-            ['Kode Transaksi', 'Waktu', 'Kasir', 'Daftar Barang', 'Total Tagihan (Rp)', 'Uang Bayar (Rp)', 'Kembalian (Rp)'],
+            ['Kode Transaksi', 'Waktu', 'Kasir', 'Metode Pembayaran', 'Daftar Barang', 'Total Tagihan (Rp)', 'Uang Bayar (Rp)', 'Kembalian (Rp)'],
             $penjualans->map(function ($r) {
                 $itemsText = collect($r->items ?? [])->map(fn ($i) => "{$i['nama']} ({$i['qty']} x {$i['satuan']})")->implode(', ');
-                return [$r->kode_transaksi, $r->waktu, $r->kasir, $itemsText, $r->total, $r->bayar, $r->kembali];
+                return [$r->kode_transaksi, $r->waktu, $r->kasir, $r->metode_pembayaran ?? 'Cash', $itemsText, $r->total, $r->bayar, $r->kembali];
             })->all()
         );
 
